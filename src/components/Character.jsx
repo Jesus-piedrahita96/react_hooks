@@ -2,12 +2,15 @@
 import axios from "axios";
 import React from "react";
 
+import '../css/App.css'
+
 //variables
 let aux = []
 
 function Character() {
   const URL = "https://rickandmortyapi.com/api/character"
   const [ estado, dispatch ] = React.useReducer(reducer, initialState)
+  const searchInput = React.useRef(null)
 
   //Solicitud de ajax (get)
   React.useEffect(() => {
@@ -31,22 +34,55 @@ function Character() {
     dispatch({type: actionType.favorites, payload: aux})
   }
 
+  //actualizar buscador
+  const update = () => {
+    dispatch({type: actionType.search, payload:searchInput.current.value})
+  }
+
+  // const filtrar = estado.datos.filter((user) => {
+  //   const dataFiltrar = user.name.toLowerCase()
+  //   const buscador = estado.search.toLowerCase()
+  //   return dataFiltrar.includes(buscador)
+  // })
+
+  //filtrar los datos
+  const filtrar = React.useMemo(() =>
+    estado.datos.filter((user) => {
+      const dataFiltrar = user.name.toLowerCase()
+      const buscador = estado.search.toLowerCase()
+      return dataFiltrar.includes(buscador)
+    }),
+    [estado.datos, estado.search]
+  )
+
   return (
     <>
-      <div>
-        {estado.datos.map(data => (
-          <div key={data.id}>
-            <div>
+      <input
+        className="container-search"
+        value={estado.search}
+        ref={searchInput}
+        onChange={update}
+        placeholder='Escribe el nombre'
+      />
+      <div className="container">
+        {filtrar.map(data => (
+          <div className="container-rick" key={data.id}>
+            <div className="container-rick__head">
               <h2>{data.name}</h2>
               <button onClick={() => add(data)}>
                 Agreagar a favoritos
               </button>
             </div>
-            <img src={data.image} alt='imagenes' />
+            <img
+              className="container-rick__image"
+              src={data.image}
+              alt='imagenes'
+            />
           </div>
         ))}
-        <hr/>
-        <h1>Favoritos</h1>
+      </div>
+      <hr/>
+      <h1>Favoritos</h1>
         {estado.favorite.map((data, index) => (
           <div key={index}>
             <div>
@@ -56,19 +92,20 @@ function Character() {
             <img src={data.image} alt='imagenes' />
           </div>
         ))}
-      </div>
     </>
   )
 }
 
 const initialState = {
   datos: [],
-  favorite: []
+  favorite: [],
+  search: ''
 }
 
 const actionType = {
   agregar: 'AGREGAR',
-  favorites: 'FAVORITES'
+  favorites: 'FAVORITES',
+  search: 'SEARCH'
 }
 
 const objectReduce = (state, payload) => ({
@@ -79,7 +116,12 @@ const objectReduce = (state, payload) => ({
   [actionType.favorites]: {
     ...state,
     favorite: payload
+  },
+  [actionType.search]: {
+    ...state,
+    search: payload
   }
+
 })
 
 function reducer(state, action) {
